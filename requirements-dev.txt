@@ -1,0 +1,7 @@
+# Extra tools for testing and for re-running the notebook.
+-r requirements.txt
+pytest>=9.0
+httpx2>=2.13
+nbformat>=5.10
+nbconvert>=7.17
+ipykernel>=7.0

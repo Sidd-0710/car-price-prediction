@@ -1,0 +1,14 @@
+# Runtime dependencies (API + Streamlit app + training).
+# The machine-learning stack is pinned to the versions the saved model was
+# trained with: a pickled scikit-learn model only loads reliably with the same version.
+fastapi>=0.141
+uvicorn[standard]>=0.53
+pydantic>=2.13
+scikit-learn==1.9.1
+numpy==2.5.3
+pandas==3.0.6
+joblib>=1.5
+matplotlib>=3.11
+plotly>=7.0
+streamlit>=1.64
+requests>=2.34

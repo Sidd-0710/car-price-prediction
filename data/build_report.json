@@ -1,0 +1,73 @@
+{
+  "sources": {
+    "cardekho_2026": {
+      "dataset": "sumangoudakaggle/second-hand-car-dataset-cardekho",
+      "platform": "CarDekho",
+      "collected": 2026,
+      "rows_read": 13361
+    },
+    "spinny_2025": {
+      "dataset": "abhiramasdf/indian-used-cars-dataset",
+      "platform": "Spinny",
+      "collected": 2025,
+      "rows_read": 8095
+    },
+    "cars24_2025": {
+      "dataset": "sukhmansaran/used-cars-prices-cars-24",
+      "platform": "Cars24",
+      "collected": 2025,
+      "rows_read": 8839
+    },
+    "cardekho_2025": {
+      "dataset": "pankajmaulekhi/indian-second-hand-cars-dataset",
+      "platform": "CarDekho",
+      "collected": 2025,
+      "rows_read": 10145
+    }
+  },
+  "rare_fuels_dropped": [
+    "Hybrid"
+  ],
+  "counts": {
+    "rows_read": 40440,
+    "dropped_unknown_brand_or_model": 188,
+    "dropped_missing_values": 340,
+    "dropped_unknown_transmission": 0,
+    "dropped_lpg": 37,
+    "dropped_price_outliers": 11,
+    "dropped_kms_outliers": 66,
+    "dropped_impossible_years": 0,
+    "dropped_rare_fuels": 53,
+    "dropped_duplicates": 2826,
+    "rows_kept": 36919
+  },
+  "summary": {
+    "brands": 38,
+    "models": 424,
+    "variants": 5103,
+    "rows_with_variant": 36838,
+    "year_min": 2001,
+    "year_max": 2026,
+    "rows_by_year_2020_on": {
+      "2020": 2366,
+      "2021": 3463,
+      "2022": 3974,
+      "2023": 2919,
+      "2024": 1707,
+      "2025": 411,
+      "2026": 12
+    },
+    "rows_by_platform": {
+      "CarDekho": 22409,
+      "Cars24": 8775,
+      "Spinny": 5735
+    },
+    "rows_by_fuel": {
+      "Petrol": 23783,
+      "Diesel": 11992,
+      "CNG": 921,
+      "Electric": 223
+    },
+    "price_median_lakh": 5.66
+  }
+}

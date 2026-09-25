@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AutoValue · Used-car price estimator</title>
+    <meta name="description" content="Estimate the resale price of a used car in India with a machine-learning model, see how sure it is, and what changes the price." />
+    <meta name="theme-color" content="#1f63b8" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/styles.css?v=4" />
+    <script>
+      // Pick the theme before the page paints, so it never flashes the wrong colours.
+      (function () {
+        var theme = null;
+        try { theme = localStorage.getItem("autovalue.theme"); } catch (e) {}
+        if (!theme) theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="topbar">
+      <div class="container topbar__inner">
+        <a class="brand" href="#/" aria-label="AutoValue home">
+          <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+            <defs>
+              <linearGradient id="brand-gradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#2a78d6" />
+                <stop offset="1" stop-color="#0f3f82" />
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="9" fill="url(#brand-gradient)" />
+            <path d="M8.5 21a7.5 7.5 0 0 1 15 0" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" />
+            <path d="M16 21l4.6-5.2" stroke="#fff" stroke-width="2.4" stroke-linecap="round" />
+            <circle cx="16" cy="21" r="2.1" fill="#fff" />
+          </svg>
+          AutoValue
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a href="#/" data-route="estimate">Estimate</a>
+          <a href="#/market" data-route="market">Market</a>
+          <a href="#/model" data-route="model">Model</a>
+          <a href="#/about" data-route="about">About</a>
+        </nav>
+        <div class="topbar__actions">
+          <span class="status" id="api-status" data-state="checking" role="status">
+            <span class="status__dot" aria-hidden="true"></span>
+            <span class="status__text" id="api-status-text">Connecting…</span>
+          </span>
+          <button class="icon-btn" id="garage-btn" type="button" aria-label="Open your garage of saved cars">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V9l9-6 9 6v12" /><path d="M7 21v-8h10v8" /><path d="M7 17h10" /></svg>
+            <span class="badge" id="garage-count" hidden>0</span>
+          </button>
+          <button class="icon-btn" id="theme-btn" type="button" aria-label="Switch theme">
+            <svg class="icon theme-icon--light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+            <svg class="icon theme-icon--dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ============================================================ ESTIMATE -->
+      <section class="view" data-view="estimate" aria-labelledby="estimate-title">
+        <div class="container hero">
+          <div class="hero__grid">
+            <div>
+              <p class="eyebrow">Used-car price estimator · India</p>
+              <h1 id="estimate-title">What's your car <span class="accent">really</span> worth?</h1>
+              <p class="hero__lede">An instant, data-driven resale estimate, how sure the model is, and what would change the price. Everything updates as you type.</p>
+            </div>
+            <ul class="trust" aria-label="About the model">
+              <li><strong data-fact="listings">3,576</strong><span>real listings learned from</span></li>
+              <li><strong>±<span data-fact="typical">15%</span></strong><span>typical error on unseen cars</span></li>
+              <li><strong data-fact="coverage">80%</strong><span>of prices inside our range</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="container estimator">
+          <form class="card form-card" id="car-form" autocomplete="off" onsubmit="return false" aria-label="Your car">
+            <div class="form-section">
+              <h2 class="form-section__title"><span class="step" aria-hidden="true">1</span>Which car?</h2>
+              <div class="picker" id="picker">
+                <label class="sr-only" for="picker-input">Brand and model</label>
+                <div class="picker__control">
+                  <svg class="icon picker__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.6-3.6" /></svg>
+                  <input id="picker-input" class="picker__input" type="text" role="combobox" aria-expanded="false" aria-controls="picker-list" aria-autocomplete="list" placeholder="Search: Swift, City, Fortuner…" spellcheck="false" />
+                  <button class="picker__clear" type="button" aria-label="Clear and search again">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                <ul class="picker__list" id="picker-list" role="listbox" aria-label="Cars" hidden></ul>
+              </div>
+              <p class="picker__selected" id="picker-note" aria-live="polite"></p>
+              <div class="chips" id="popular-chips" aria-label="Popular models"></div>
+              <div class="field" style="margin-top: 16px">
+                <div class="field__head">
+                  <label class="field__label" for="variant-select">Variant</label>
+                  <span class="field__hint" id="variant-hint"></span>
+                </div>
+                <select id="variant-select" class="select"></select>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h2 class="form-section__title"><span class="step" aria-hidden="true">2</span>Age and usage</h2>
+              <div class="field">
+                <div class="field__head">
+                  <label class="field__label" for="year-input">Registration year</label>
+                  <span class="field__hint" id="year-hint"></span>
+                </div>
+                <div class="range-row">
+                  <input id="year-range" type="range" min="1995" max="2026" step="1" aria-label="Registration year slider" />
+                  <input id="year-input" class="num-input" type="number" min="1990" max="2026" step="1" inputmode="numeric" />
+                </div>
+                <div class="range-ends" aria-hidden="true"><span>1995</span><span id="year-max">2026</span></div>
+              </div>
+              <div class="field">
+                <div class="field__head">
+                  <label class="field__label" for="kms-input">Kilometres driven</label>
+                  <span class="field__hint" id="kms-hint"></span>
+                </div>
+                <div class="range-row">
+                  <input id="kms-range" type="range" min="0" max="300000" step="1000" aria-label="Kilometres driven slider" />
+                  <input id="kms-input" class="num-input" type="number" min="0" max="1000000" step="1000" inputmode="numeric" />
+                </div>
+                <div class="range-ends" aria-hidden="true"><span>0</span><span>3,00,000 km</span></div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h2 class="form-section__title"><span class="step" aria-hidden="true">3</span>Details</h2>
+              <fieldset class="field"><legend>Fuel</legend><div id="seg-fuel"></div></fieldset>
+              <fieldset class="field"><legend>Gearbox</legend><div id="seg-gearbox"></div></fieldset>
+              <fieldset class="field"><legend>Previous owners</legend><div id="seg-owner"></div></fieldset>
+              <fieldset class="field">
+                <legend>Listed on</legend>
+                <div id="seg-platform"></div>
+                <p class="field__note" id="platform-note"></p>
+              </fieldset>
+            </div>
+
+            <div class="form-actions">
+              <span class="form-actions__note"><span class="live-dot" aria-hidden="true"></span>Updates live</span>
+              <button type="button" class="btn btn--quiet btn--sm" id="reset-btn">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>
+                Reset
+              </button>
+            </div>
+          </form>
+
+          <div class="results" id="results" aria-busy="true">
+            <div id="results-error"></div>
+            <div id="results-skeleton" aria-hidden="true">
+              <div class="skeleton" style="height: 300px; border-radius: 22px"></div>
+              <div class="results-grid" style="margin-top: 20px">
+                <div class="skeleton" style="height: 320px; border-radius: 18px"></div>
+                <div class="skeleton" style="height: 320px; border-radius: 18px"></div>
+              </div>
+            </div>
+
+            <div id="results-content" class="results" hidden>
+              <section class="result-card" aria-label="Estimate">
+                <div class="result-card__top">
+                  <span class="eyebrow">Estimated resale value</span>
+                  <span class="matched-pill"><span class="avatar" id="matched-avatar" aria-hidden="true"></span><span id="matched-name"></span></span>
+                </div>
+                <div class="price" aria-live="polite">
+                  <span class="price__value" id="price-value">₹0.00</span>
+                  <span class="price__unit" id="price-unit">lakh</span>
+                </div>
+                <p class="price__full" id="price-full"></p>
+
+                <div class="gauge" aria-hidden="true">
+                  <div class="gauge__track">
+                    <div class="gauge__fill" id="gauge-fill"></div>
+                    <div class="gauge__marker" id="gauge-marker"></div>
+                  </div>
+                  <div class="gauge__labels">
+                    <strong id="gauge-low"></strong>
+                    <span class="gauge__caption" id="gauge-caption"></span>
+                    <strong id="gauge-high"></strong>
+                  </div>
+                </div>
+
+                <dl class="result-stats">
+                  <div><dt>Age today</dt><dd id="stat-age"></dd></div>
+                  <div><dt>Driven per year</dt><dd id="stat-annual"></dd></div>
+                  <div><dt id="stat-accuracy-label">Typical error</dt><dd id="stat-accuracy"></dd></div>
+                </dl>
+
+                <div class="result-actions">
+                  <button type="button" class="btn btn--light btn--sm" id="save-btn">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
+                    <span id="save-btn-label">Save to garage</span>
+                  </button>
+                  <button type="button" class="btn btn--glass btn--sm" id="copy-btn">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                    Copy summary
+                  </button>
+                  <button type="button" class="btn btn--glass btn--sm" id="share-btn">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                    Copy link
+                  </button>
+                </div>
+              </section>
+
+              <div id="alerts"></div>
+              <div class="results-grid" id="results-grid"></div>
+              <div id="curve-slot"></div>
+              <div id="similar-slot"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== MARKET -->
+      <section class="view" data-view="market" hidden aria-labelledby="market-title">
+        <div class="container">
+          <header class="page-head">
+            <p class="eyebrow">Market insights</p>
+            <h1 id="market-title">The used-car market, in numbers</h1>
+            <p id="market-note">What the listings the model learned from look like.</p>
+          </header>
+          <div id="market-root">
+            <div class="kpis"><div class="skeleton" style="height: 104px"></div><div class="skeleton" style="height: 104px"></div><div class="skeleton" style="height: 104px"></div><div class="skeleton" style="height: 104px"></div></div>
+            <div class="grid-2"><div class="skeleton" style="height: 340px"></div><div class="skeleton" style="height: 340px"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============================================================== MODEL -->
+      <section class="view" data-view="model" hidden aria-labelledby="model-title">
+        <div class="container">
+          <header class="page-head">
+            <p class="eyebrow">Model performance</p>
+            <h1 id="model-title">How good is the model?</h1>
+            <p><span data-fact="test">716</span> cars were hidden before training and used once, for a final exam. These are its honest scores.</p>
+          </header>
+          <div id="model-root">
+            <div class="kpis"><div class="skeleton" style="height: 104px"></div><div class="skeleton" style="height: 104px"></div><div class="skeleton" style="height: 104px"></div><div class="skeleton" style="height: 104px"></div></div>
+            <div class="skeleton" style="height: 180px"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============================================================== ABOUT -->
+      <section class="view" data-view="about" hidden aria-labelledby="about-title">
+        <div class="container">
+          <header class="page-head">
+            <p class="eyebrow">About the project</p>
+            <h1 id="about-title">Used-car price prediction with machine learning</h1>
+            <p>A complete project: data cleaning, model comparison, honest evaluation, an API and this website.</p>
+          </header>
+          <div class="stack">
+            <div class="grid-2">
+              <article class="card card__body prose">
+                <h2>The problem</h2>
+                <p>Buyers and sellers of used cars in India rarely know what a fair price is. AutoValue predicts the <strong>resale price in lakhs of rupees</strong> from a car's brand, model, age, kilometres, fuel, gearbox, seller type and ownership. It is a supervised <em>regression</em> problem: the answer is a number.</p>
+                <h3>The data</h3>
+                <p><span data-fact="raw">40,440</span> used-car listings from <strong>CarDekho, Cars24 and Spinny</strong>, collected in 2025 and 2026 (four public datasets, see <code>DATA_SOURCES.md</code>). Names were matched across sources, and <span data-fact="duplicates">2,826</span> duplicate listings were removed, because the same car in both the training and the test data would make the scores look better than they are. That leaves <strong><span data-fact="listings">36,919</span> unique cars</strong> from <span data-fact="brands">38</span> brands, with their exact <strong>variant</strong> (VXI, ZXI Plus AMT…), registered up to <span data-fact="yearmax">2026</span>.</p>
+                <h3>The method</h3>
+                <ol>
+                  <li><strong>Clean</strong> the listings and split each name into a brand and a model.</li>
+                  <li><strong>Engineer features</strong>: age when listed, kilometres (and their logarithm), kilometres per year, the variant's words.</li>
+                  <li><strong>Encode</strong> brand, model and exact variant with one-hot and target encoding, and predict the logarithm of the price.</li>
+                  <li><strong>Compare</strong> nine algorithms with 5-fold cross-validation, then <strong>tune</strong> the best three.</li>
+                  <li><strong>Test</strong> once on <span data-fact="test">716</span> cars the model never saw.</li>
+                  <li><strong>Calibrate</strong> a likely price range from the model's past errors.</li>
+                </ol>
+              </article>
+              <article class="card card__body prose">
+                <h2>Results</h2>
+                <p>The winner is <strong data-fact="model">Gradient Boosting (tuned)</strong>. On unseen cars its typical error is <strong><span data-fact="typical">15%</span></strong> and its R² is <strong data-fact="r2">0.87</strong>. Its <span data-fact="confidence">80%</span> price range really contained <span data-fact="coverage">80%</span> of the true prices.</p>
+                <h3>Limitations</h3>
+                <ul>
+                  <li>They are <strong>asking prices</strong>, not final sale prices, and each platform (CarDekho, Cars24, Spinny) prices a little differently.</li>
+                  <li>The listings are snapshots from 2025–<span data-fact="reference">2026</span>. Prices move over time, so estimates slowly go out of date.</li>
+                  <li>Very new cars (2025–2026) and luxury cars have fewer examples, so their estimates are less reliable.</li>
+                  <li>There is no information on accidents, condition or servicing.</li>
+                </ul>
+                <h3>Built with</h3>
+                <div class="tags"><span class="tag">Python</span><span class="tag">pandas</span><span class="tag">scikit-learn</span><span class="tag">FastAPI</span><span class="tag">Pydantic</span><span class="tag">HTML · CSS · JavaScript</span><span class="tag">pytest</span></div>
+              </article>
+            </div>
+            <article class="card card__body prose">
+              <h2>Use the API</h2>
+              <p>Everything on this site comes from a public API. Try it in the interactive docs at <a href="/docs">/docs</a>, or from the terminal:</p>
+              <pre class="code"><code>curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -d '{
+  "Car_Name": "Maruti Swift", "Year": 2015, "Kms_Driven": 50000,
+  "Fuel_Type": "Petrol", "Seller_Type": "Individual", "Transmission": "Manual", "Owner": 0
+}'</code></pre>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <p>AutoValue: estimates are a guide based on 2025–<span data-fact="reference">2026</span> listings, not a valuation.</p>
+        <nav aria-label="Footer">
+          <a href="#/market">Market</a>
+          <a href="#/model">Model</a>
+          <a href="#/about">About</a>
+          <a href="/docs">API docs</a>
+        </nav>
+      </div>
+    </footer>
+
+    <div class="mobile-bar" id="mobile-bar" aria-hidden="true">
+      <div class="mobile-bar__text">
+        <span class="mobile-bar__label" id="mobile-bar-label">Estimated resale value</span>
+        <span class="mobile-bar__price" id="mobile-bar-price"></span>
+      </div>
+      <button type="button" class="btn btn--light btn--sm" id="mobile-bar-btn" tabindex="-1">See details</button>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/assets/js/app.js?v=4"></script>
+  </body>
+</html>
